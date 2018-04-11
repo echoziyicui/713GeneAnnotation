@@ -6,11 +6,10 @@ import subprocess
 import multiprocessing
 
 # Inputs
-    # reference_genome: filename of reference genome
-    # input_fastqs: filenames of all input fastqs
+    # transcriptome_path (not an argument, assume the file is in the step1.1 directory from previous step)
 
 # Outputs
-    # augustus_output.gff 
+    # augustus_output.gff
 
 cwd = os.getcwd()
 transcriptome_path = cwd + "/step1.1/intermediate_fasta.fasta"
@@ -34,9 +33,9 @@ def run_single_augustus(transcriptome_path, species, output_file):
 
     augustus = subprocess.Popen(augustus_args, stdout=out)
 
-    return 
+    return
 
-run_single_augustus(transcriptome_path, 'human', 'intermediate_gff.gff')
+run_single_augustus(transcriptome_path, 'human', 'augustus_gff.gff')
 
 
 
