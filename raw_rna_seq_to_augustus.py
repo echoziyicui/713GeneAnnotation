@@ -23,7 +23,7 @@ import glob
 
 
 reference_genome = sys.argv[1]                 # Name of reference genome - eg. hg38.fa -
-input_fastqs = sys.argv[2:]               # Names of input fastqs
+input_fastqs = sys.argv[2:]                    # Names of input fastqs
 cores = str(multiprocessing.cpu_count()-1)
 
 
@@ -52,23 +52,14 @@ print(input_fastqs)
 #     sys.exit()
 
 # Arguments for bwa alignment call
-bwa_args = [
-    "bwa",
-    "mem",
-    "-t",
-    cores,
-    ref_genome
-] + input_fastqs
 
-# Arguments for samtools sort call (piped from bwa mem)
-sam_sort_args = [
-    "samtools",
-    "sort",
-    "-O",
-    "BAM",
-    "-o",
-    intermediate_dir + "intermediate_bam.bam"
-]
+cat_str = "str " + input_fastqs + " > " + fastq_directory+"big.fastq"
+
+star_str = '''STAR --outFilterType BySJout --runThreadN 8 --outFilterMismatchNmax 2 --genomeDir mouse_liver_star_index
+ --readFilesIn '''+fastq_directory+'''big.fastq --outFileNamePrefix'''+ intermediate_dir+'''temp --outSAMtype BAM SortedByCoordinate --
+ quantMode TranscriptomeSAM GeneCounts --outFilterMultimapNmax 1 --outFilterMatchNmin 16 --alignEndsType EndToEnd'''
+
+rename_str = "mv " + intermediate_dir + "tempAlignedsortedByCoord.out.bam " + intermediate_dir + intermediate_bam.bam
 
 alignment_full = "bwa mem -t "+cores+ref_genome+" ".join(input_fastqs)+"|samtools sort -O BAM -o "+intermediate_dir+"intermediate_bam.bam"
 print(alignment_full)
@@ -96,16 +87,11 @@ print("Starting Pipeline *******************************************************
 print("Starting Step 1.1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 print("Mapping Reads to Reference, Outputting .bam")
 
-bwa_error = open(intermediate_dir + "bwa_error.txt", 'w')
-print(bwa_args)
-print(type(bwa_error))
-bwa = subprocess.Popen(bwa_args, stdout=subprocess.PIPE, stderr=bwa_error)
+os.system(cat_str)
 
-sam_sort_error = open(intermediate_dir + "sam_sort_error.txt", 'w')
-sam_sort = subprocess.Popen(sam_sort_args, stdin=bwa.stdout, stderr=bwa_error)
-bwa.stdout.close()
-produce_bam = sam_sort.communicate()
-bwa.wait()
+os.system(star_str)
+
+os.system(rename_str)
 
 print('Constructing Transcriptome From Mapped Reads, Outputting .gff')
 
