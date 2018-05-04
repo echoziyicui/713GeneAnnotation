@@ -23,7 +23,8 @@ import glob
 
 
 reference_genome = sys.argv[1]                 # Name of reference genome - eg. hg38.fa -
-input_fastqs = sys.argv[2:]                    # Names of input fastqs
+reference_gtf = sys.argv[2]                    # Name of reference gtf file
+input_fastqs = sys.argv[3:]                    # Names of input fastqs
 cores = str(multiprocessing.cpu_count()-1)
 
 
@@ -37,6 +38,7 @@ fastq_directory = cwd + "/fastq/"
 #     sys.exit()
 
 ref_genome = reference_directory + reference_genome
+ref_gtf = reference_directory + reference_gtf
 
 intermediate_dir = cwd + "/step1.1/"
 try:
@@ -53,16 +55,24 @@ print(input_fastqs)
 
 # Arguments for bwa alignment call
 
-cat_str = "str " + input_fastqs + " > " + fastq_directory+"big.fastq"
+cat_str = "cat " + " ".join(input_fastqs) + " > " + fastq_directory+"big.fastq"
 
-star_str = '''STAR --outFilterType BySJout --runThreadN 8 --outFilterMismatchNmax 2 --genomeDir mouse_liver_star_index
- --readFilesIn '''+fastq_directory+'''big.fastq --outFileNamePrefix'''+ intermediate_dir+'''temp --outSAMtype BAM SortedByCoordinate --
- quantMode TranscriptomeSAM GeneCounts --outFilterMultimapNmax 1 --outFilterMatchNmin 16 --alignEndsType EndToEnd'''
+#star_str = '''STAR --outFilterType BySJout --runThreadN 8 --outFilterMismatchNmax 2 --genomeDir mouse_liver_star_index
+# --readFilesIn '''+fastq_directory+'''big.fastq --outFileNamePrefix'''+ intermediate_dir+'''temp --outSAMtype BAM SortedByCoordinate --
+# quantMode TranscriptomeSAM GeneCounts --outFilterMultimapNmax 1 --outFilterMatchNmin 16 --alignEndsType EndToEnd'''
+print(ref_genome)
+star_ind = "STAR --runThreadN=8 --runMode=genomeGenerate --genomeDir="+reference_directory+ " --genomeFastaFiles="+ref_genome+ " --sjdbGTFfile="+ref_gtf
 
-rename_str = "mv " + intermediate_dir + "tempAlignedsortedByCoord.out.bam " + intermediate_dir + intermediate_bam.bam
+star_str1 = '''STAR --outFilterType BySJout --runThreadN 8 --outFilterMismatchNmax 2 --genomeDir '''
+star_str2 = reference_directory+''' --readFilesIn '''+fastq_directory+'''big.fastq --outFileNamePrefix '''
+star_str3 = intermediate_dir+'''temp --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM '''
+star_str4 = '''GeneCounts --outFilterMultimapNmax 1 --outFilterMatchNmin 16 --alignEndsType EndToEnd'''
+star_str = star_str1+star_str2+star_str3+star_str4
 
-alignment_full = "bwa mem -t "+cores+ref_genome+" ".join(input_fastqs)+"|samtools sort -O BAM -o "+intermediate_dir+"intermediate_bam.bam"
-print(alignment_full)
+rename_str = "mv " + intermediate_dir + "tempAligned.sortedByCoord.out.bam " + intermediate_dir + "intermediate_bam.bam"
+
+#alignment_full = "bwa mem -t "+cores+ref_genome+" ".join(input_fastqs)+"|samtools sort -O BAM -o "+intermediate_dir+"intermediate_bam.bam"
+#print(alignment_full)
 # Arguments for scallop assembly call
 scallop_args = [
     "scallop",
@@ -85,6 +95,10 @@ gffread_args = [
 
 print("Starting Pipeline ***************************************************************************")
 print("Starting Step 1.1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+print("Indexing Reference")
+if not os.path.exists(ref_genome+".fai"):
+    os.system(star_ind)
+
 print("Mapping Reads to Reference, Outputting .bam")
 
 os.system(cat_str)
@@ -104,7 +118,4 @@ gffread_args = subprocess.run(gffread_args)
 print('Step 1.1 Complete >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
 
  #Modify intermediate_fasta.fasta to have chromosome names
-
-
-
 
