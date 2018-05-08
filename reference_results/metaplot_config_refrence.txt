@@ -1,0 +1,8 @@
+
+#mouseliverAligned.toTranscriptome.out.bam
+#read_length	proportion(per total mapped reads)	predicted_psite	f0_sum	f1_sum	f2_sum	f0_percent	pvalue1	pvalue2	pvalue_combined
+# 27	25.17%	12	23715	6620	3506	70.08%	0.000146526260096	0.000146526260096	1.51650855077e-07
+# 28	28.73%	12	29681	3661	8309	71.26%	0.000146526260096	0.000146526260096	1.51650855077e-07
+
+# SampleName	AlignmentFile	Stranded(yes/reverse)	P-siteReadLength	P-siteLocations
+mouseliverAligned.toTranscriptome.out	mouseliverAligned.toTranscriptome.out.bam	yes	27,28	12,12
