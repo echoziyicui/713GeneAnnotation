@@ -55,19 +55,20 @@ mv $ribo_fastq mouse_rRNA.fastq
 ################################################################################
 ### Preprocessing
 ##Step1. Use bowtie to remove rRNA in the ribo-seq.
-export PATH=${PATH}:/usr1/home/sgona/bowtie-0.12.7
-bowtie-build $rRNA_fasta mouse_rRNA
-bowtie -p 8 -norc --un un_aligned_ribo_mouse.fastq -q mouse_rRNA \
-$ribo_fastq mouse_rRNA.align
+#export PATH=${PATH}:/usr1/home/sgona/bowtie-0.12.7
+
+$bowtie_path/bowtie-build $rRNA_fasta mouse_rRNA
+$bowtie_path/bowtie -p 8 -norc --un un_aligned_ribo_mouse.fastq -q mouse_rRNA \
+mouse_rRNA.fastq mouse_rRNA.align
 
 ##Step2: Use star to align the clean reads to reference genome fasta file to
 ##       get a ribo-seq bam file.
 # a. Build index for star.
-export PATH=${PATH}:/usr1/home/sgona/STAR/bin/Linux_x86_64_static
-STAR --runThreadN 8 --runMode genomeGenerate --genomeDir $folder \
+#export PATH=${PATH}:/usr1/home/sgona/STAR/bin/Linux_x86_64_static
+$star_path/STAR --runThreadN 8 --runMode genomeGenerate --genomeDir $folder \
 --genomeFastaFiles $genome_fasta --sjdbGTFfile $genome_GTF
 # b. Align the clean read back to fasta genome.
-STAR --outFilterType BySJout --runThreadN 8 --outFilterMismatchNmax 2 \
+$star_path/STAR --outFilterType BySJout --runThreadN 8 --outFilterMismatchNmax 2 \
 --genomeDir $folder --readFilesIn un_aligned_ribo_mouse.fastq  \
 --outFileNamePrefix mouseliver --outSAMtype BAM SortedByCoordinate \
 --quantMode TranscriptomeSAM GeneCounts --outFilterMultimapNmax 1 \
@@ -76,11 +77,13 @@ STAR --outFilterType BySJout --runThreadN 8 --outFilterMismatchNmax 2 \
 ### ORF Identification
 #Run ribocode to find ORFs in the given genome fasta based on rRNA-removed
 #ribo-seq bam file.
-export PATH=${PATH}:/usr1/home/sgona/RiboCode/RiboCode
-RiboCode_onestep -g $genome_GTF -f $genome_fasta \
+#export PATH=${PATH}:/usr1/home/sgona/RiboCode/RiboCode
+$ribocode_path/RiboCode_onestep -g $genome_GTF -f $genome_fasta \
 -r mouseliverAligned.toTranscriptome.out.bam -l no -o RiboCode_ORFs_result
 ################################################################################
 ### Postprosessing
 # Re-format the Ribocode results (txt) to GTF form
+awk 'BEGIN {OFS="\t"};{print $8,$2,$7,$13,$14,$28,$9,".","gene_id \""$5"\"; gene_name \""$6"\"; "}'  RiboCode_ORFs_result_collapsed.txt >ribocode_gtf.gtf
 
-#
+
+### ~/.profile ### in manual makesure they have the environment variable
